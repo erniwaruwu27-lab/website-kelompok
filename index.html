@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>SIPADES - Sistem Informasi Pelayanan Desa</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1>🏛️ SIPADES</h1>
+  <p>Sistem Informasi Pelayanan Desa</p>
+</header>
+
+<main class="container">
+  <section class="card">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <label>Username</label>
+      <input type="text" id="username" required>
+      <label>Password</label>
+      <input type="password" id="password" required>
+      <label>Peran</label>
+      <select id="role">
+        <option value="warga">Warga</option>
+        <option value="admin">Admin Desa</option>
+        <option value="kades">Kepala Desa</option>
+      </select>
+      <button type="submit">Masuk</button>
+    </form>
+    <p class="hint">Demo: warga / admin / kades (password: 123)</p>
+  </section>
+</main>
+
+<script src="js/models.js"></script>
+<script src="js/repository.js"></script>
+<script src="js/service.js"></script>
+<script>
+  document.getElementById('loginForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const role = document.getElementById('role').value;
+    sessionStorage.setItem('user', JSON.stringify({ username, role }));
+    window.location.href = role === 'warga' ? 'warga.html'
+                          : role === 'admin' ? 'admin.html'
+                          : 'kades.html';
+  });
+</script>
+</body>
+</html>

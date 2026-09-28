@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>SIPADES - Warga</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1>🏛️ SIPADES — Warga</h1>
+  <button class="logout" onclick="logout()">Logout</button>
+</header>
+<main class="container">
+  <!-- Ajukan Surat -->
+  <section class="card">
+    <h2>📝 Ajukan Surat</h2>
+    <label>Nama Warga</label>
+    <input id="namaWarga" value="Budi Santoso">
+    <label>NIK</label>
+    <input id="nikWarga" value="3201234567890001">
+    <label>Alamat</label>
+    <input id="alamatWarga" value="Dusun Melati RT 01">
+
+    <label>Jenis Surat</label>
+    <select id="jenisSurat"></select>
+
+    <label>Berkas yang Dilampirkan (pisahkan koma)</label>
+    <input id="berkas" placeholder="KTP, KK, Foto 3x4">
+
+    <button onclick="ajukan()">Ajukan Surat</button>
+    <p class="hint">Syarat berkas otomatis dicek sistem.</p>
+  </section>
+
+  <!-- Riwayat -->
+  <section class="card">
+    <h2>📋 Riwayat Pengajuan Saya</h2>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Jenis Surat</th><th>Tanggal</th><th>Status</th></tr>
+      </thead>
+      <tbody id="riwayat"></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="js/models.js"></script>
+<script src="js/repository.js"></script>
+<script src="js/service.js"></script>
+<script>
+  // Isi dropdown jenis surat
+  const jenisSelect = document.getElementById('jenisSurat');
+  JenisSuratRepository.all().forEach(j => {
+    jenisSelect.innerHTML += `<option value="${j.kode}">${j.nama} (syarat: ${j.syarat.join(', ')})</option>`;
+  });
+
+  function ajukan() {
+    try {
+      const warga = new Warga('W' + Date.now(),
+        namaWarga.value, nikWarga.value, alamatWarga.value);
+      const berkasArr = berkas.value.split(',').map(s => s.trim()).filter(Boolean);
+      PengajuanService.ajukanSurat(warga, jenisSelect.value, berkasArr);
+      alert('✅ Pengajuan berhasil! Status: MENUNGGU_VERIFIKASI');
+      render();
+    } catch (e) {
+      alert('❌ ' + e.message);
+    }
+  }
+
+  function render() {
+    const list = PengajuanService.getByWarga('Budi Santoso');
+    riwayat.innerHTML = list.map(p => `
+      <tr>
+        <td>${p.id.slice(-6)}</td>
+        <td>${p.jenisSurat.nama}</td>
+        <td>${p.tanggalAjuan}</td>
+        <td><span class="badge ${p.status.toLowerCase()}">${p.status}</span></td>
+      </tr>
+    `).join('') || '<tr><td colspan="4">Belum ada pengajuan.</td></tr>';
+  }
+
+  function logout() { sessionStorage.clear(); location.href='index.html'; }
+  render();
+</script>
+</body>
+</html>

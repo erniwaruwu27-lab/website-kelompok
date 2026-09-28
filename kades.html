@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>SIPADES - Kepala Desa</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1>🏛️ SIPADES — Kepala Desa</h1>
+  <button class="logout" onclick="logout()">Logout</button>
+</header>
+<main class="container">
+  <section class="card">
+    <h2>✍️ Persetujuan Pengajuan</h2>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Warga</th><th>Jenis</th><th>Status</th><th>Aksi</th></tr>
+      </thead>
+      <tbody id="tabel"></tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>📊 Laporan Pengajuan</h2>
+    <table>
+      <thead>
+        <tr><th>Jenis Surat</th><th>Menunggu Verifikasi</th><th>Menunggu Persetujuan</th><th>Disetujui</th><th>Ditolak</th></tr>
+      </thead>
+      <tbody id="laporan"></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="js/models.js"></script>
+<script src="js/repository.js"></script>
+<script src="js/service.js"></script>
+<script>
+  const kades = new KepalaDesa('K001', 'Kepala Desa', 'kades');
+
+  function render() {
+    const list = PengajuanRepository.all();
+    tabel.innerHTML = list.map(p => `
+      <tr>
+        <td>${p.id.slice(-6)}</td>
+        <td>${p.warga.nama}</td>
+        <td>${p.jenisSurat.nama}</td>
+        <td><span class="badge ${p.status.toLowerCase()}">${p.status}</span></td>
+        <td>
+          ${p.status === 'MENUNGGU_PERSETUJUAN' ? `
+            <button class="success" onclick="aksi('${p.id}','setujui')">Setujui</button>
+            <button class="danger" onclick="aksi('${p.id}','tolak')">Tolak</button>
+          ` : '—'}
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="5">Tidak ada data.</td></tr>';
+
+    // Laporan agregat
+    const jenisList = JenisSuratRepository.all();
+    laporan.innerHTML = jenisList.map(j => {
+      const rows = list.filter(p => p.jenisSurat.kode === j.kode);
+      const count = s => rows.filter(p => p.status === s).length;
+      return `<tr>
+        <td>${j.nama}</td>
+        <td>${count('MENUNGGU_VERIFIKASI')}</td>
+        <td>${count('MENUNGGU_PERSETUJUAN')}</td>
+        <td>${count('DISETUJUI')}</td>
+        <td>${count('DITOLAK')}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function aksi(id, tipe) {
+    try {
+      const raw = PengajuanRepository.findById(id);
+      const pengajuan = Object.assign(new PengajuanSurat(), raw);
+      let alasan = '';
+      if (tipe === 'tolak') alasan = prompt('Alasan penolakan:') || 'Tidak memenuhi syarat';
+      kades.prosesPengajuan(pengajuan, tipe, alasan);
+      PengajuanRepository.update(id, {
+        status: pengajuan.status,
+        penyetuju: pengajuan.penyetuju,
+        alasanTolak: pengajuan.alasanTolak
+      });
+      alert('✅ Aksi berhasil.');
+      render();
+    } catch (e) { alert('❌ ' + e.message); }
+  }
+
+  function logout() { sessionStorage.clear(); location.href='index.html'; }
+  render();
+</script>
+</body>
+</html>
